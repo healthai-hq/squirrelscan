@@ -21,6 +21,10 @@ How it works:
 
 - `perf/bad-caching` explains a missing ETag behind Cloudflare. Cloudflare drops the `ETag` from HTML it rewrites (Email Address Obfuscation, Automatic HTTPS Rewrites, Replace insecure JavaScript libraries, and JavaScript Detections, which Bot Fight Mode turns on), sometimes only for requests that ask for a page, so a plain `curl -I` can show a header browsers never get. When the validators check warns and at least half of the pages missing a validator came through Cloudflare, the finding now says the CDN may be the cause and lists the fixes: `no-transform` in the HTML `Cache-Control`, turning those features off, or also sending `Last-Modified`. The validators check now warns instead of failing, because a page with no lifetime and no validator already counts against the freshness check. A weak `ETag` (`W/"..."`) still counts as a validator for every content encoding, and a new test pins that. The [rule page](https://docs.squirrelscan.com/rules/perf/bad-caching) shows how to check which side removes it.
 
+### Changed
+
+- `security/sri`, `content/meta-in-body` and `schema/rating-scope` use one message wording whatever the count, and `schema/rating-scope` no longer puts the rated entity's name in its check message, so one defect keeps one finding identity across pages.
+
 ## v0.0.107 (2026-10-09)
 
 squirrelscan can now probe, politely: a new probing intensity setting decides how much an audit may send, and the first two probing rules (GraphQL introspection and GraphQL mutations over GET) use it. There is also a rule for auth tokens kept in web storage, a rule for a CSP that blocks the page's own resources, quieter secret scanning, and the entity page filter now behaves the same in the CLI, the MCP tools and the hosted API.
