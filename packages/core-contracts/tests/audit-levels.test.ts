@@ -17,6 +17,7 @@ import {
   LEGACY_CLOUD_DEPTH_PROFILES,
   parseAuditLevel,
   parseLegacyCloudDepth,
+  parseResolvedAuditSettings,
   resolveAuditSettings,
 } from "../src/audit-levels";
 import { COVERAGE_PAGE_LIMITS } from "../src/limits";
@@ -113,6 +114,50 @@ describe("custom", () => {
     expect(clampAuditPages(Number.NaN)).toBe(100);
     expect(clampAuditPages(Number.POSITIVE_INFINITY)).toBe(100);
     expect(resolveAuditSettings("full", { pages: 99_999 }).settings.pages).toBe(10_000);
+  });
+});
+
+describe("reading a stored snapshot back", () => {
+  test("a snapshot round-trips unchanged", () => {
+    const custom = resolveAuditSettings("surface", { pages: 200, render: "off" });
+    expect(parseResolvedAuditSettings(JSON.parse(JSON.stringify(custom)))).toEqual(custom);
+    const quick = resolveAuditSettings("quick");
+    expect(parseResolvedAuditSettings(quick)).toEqual(quick);
+  });
+
+  test("keeps the stored level and changes, so a later preset change does not rewrite history", () => {
+    const stored = {
+      level: "surface",
+      basedOn: "surface",
+      changes: [],
+      settings: { ...AUDIT_LEVEL_PRESETS.surface, pages: 80 },
+    };
+    expect(parseResolvedAuditSettings(stored)).toMatchObject({
+      level: "surface",
+      changes: [],
+      settings: { pages: 80 },
+    });
+  });
+
+  test("anything that is not a snapshot is null", () => {
+    for (const value of [null, undefined, "surface", 3, [], {}, { basedOn: "deep" }]) {
+      expect(parseResolvedAuditSettings(value)).toBeNull();
+    }
+  });
+
+  test("untrusted values never come back: bad settings fall back to the level, bad words are recomputed", () => {
+    const parsed = parseResolvedAuditSettings({
+      level: '"/><script>',
+      basedOn: "FULL",
+      changes: ["pages", "<x>", 7],
+      settings: { pages: Infinity, render: "<img>", probe: "loud", cloudChecks: "yes", externalLinks: false },
+    });
+    expect(parsed).toEqual({
+      level: "custom",
+      basedOn: "full",
+      changes: ["pages"],
+      settings: { ...AUDIT_LEVEL_PRESETS.full, externalLinks: false },
+    });
   });
 });
 
