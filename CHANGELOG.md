@@ -17,6 +17,23 @@ How it works:
 
 ## [Unreleased]
 
+### Added
+
+- Audit levels: `--level quick|surface|full`. A level is a named set of audit settings (pages, crawl strategy, cloud checks, rendering, external link checks and probing), defined once and read by `squirrel audit`, `squirrel crawl`, the local MCP tools, the config and the shell completions. `--coverage`/`-C` and `[crawler] coverage` keep working as the older names, `fast` still means quick, and anything else stops with the list of levels. Picking a level fills in every setting; the flags and config values you already use (`--max-pages`, `--render-mode`, `--http`, `--probe`, `[external_links] enabled = false` and the rest) change single settings, and the audit becomes custom. The run banner says which: `Level     surface · max 100 pages`, or `Level     custom (surface + max_pages 200)`. See [Audit levels](https://docs.squirrelscan.com/guides/audit-levels).
+- Reports say which level they ran at. The JSON report has `meta.auditLevel` (`level`, `basedOn`, `changes`, `settings`), the LLM report an `<audit-level>` element, and the text, Markdown and HTML reports an `Audit level:` line. Existing fields keep their names, and `coverageMode` is still stamped.
+- The local MCP `audit_website` tool takes `level` (`coverage` still works) and applies the project config the way `squirrel audit` does, including `[crawler] max_pages`.
+
+### Changed
+
+- A quick audit spends no credits, signed in or not. It has no cloud checks, so it no longer registers the run (which is what charged the 50-credit base and settled the pages), and it renders pages in the cloud browser only when you ask with `--render-mode` or `--render`. A signed-in quick audit used to cost up to 100 credits.
+- A level's settings are now the defaults: quick no longer checks external links and probes passively, while surface and full check external links and probe actively, signed in or not. Before, external links were checked at every level and probing followed sign-in instead of the level. Explicit flags and config values win as before. `max_pages = 100` and `[external_links] enabled = true`, which `squirrel init` writes into every config, still read as unset.
+- Hints and locked-check messages point at `--level` instead of `-C`, and the quick-level message no longer says "coverage".
+
+### Fixed
+
+- `squirrel crawl -C fast` crawled with no page limit at all: the crawl cast the flag to a level without checking it, the page lookup for `fast` came back empty and the cap became `NaN`. The crawl now reads its level through the same parser as `audit`, so `fast` is quick (25 pages) and an unknown level stops before the crawl starts. A `--max-pages` that is not a positive whole number is refused too, instead of the same unbounded crawl.
+- The local MCP `quick_check` tool described itself as a single-page check. It reads the URL and its sitemaps, up to 25 pages, and now says so.
+
 ## v0.0.107 (2026-10-09)
 
 squirrelscan can now probe, politely: a new probing intensity setting decides how much an audit may send, and the first two probing rules (GraphQL introspection and GraphQL mutations over GET) use it. There is also a rule for auth tokens kept in web storage, a rule for a CSP that blocks the page's own resources, quieter secret scanning, and the entity page filter now behaves the same in the CLI, the MCP tools and the hosted API.
