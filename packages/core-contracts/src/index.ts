@@ -74,6 +74,7 @@ import type { ResolutionSignal } from "./resolution";
 import type { AuditFailureReasonCode } from "./failure-reason";
 import type { RefusedFetch } from "./refused-fetch";
 import type { EntityMap } from "./entity-map";
+import type { AuditLevel, ResolvedAuditSettings } from "./audit-levels";
 
 export interface CheckItem {
   id: string;
@@ -513,14 +514,23 @@ export interface AuditReport {
    */
   cloudMode?: CloudRenderMode;
   /**
-   * Coverage mode this audit ran with (#747). CLI quick coverage skips ALL
-   * cloud enrichment by design, so the renderer frames locked cloud rules as a
-   * coverage choice ("re-run with -C surface/full") — never a cloud outage.
-   * Stamped by the CLI publish path only; absent for cloud-triggered runs
-   * (cloud enrichment runs there regardless of coverage) and pre-#747 reports,
-   * which keep the legacy messaging. REPORT-ONLY.
+   * The audit level this run started from (#747), in the crawler's words: one
+   * of quick, surface, full. The quick level skips the cloud checks by design,
+   * so the renderer frames locked cloud rules as a level choice ("re-run at the
+   * surface or full level"), never a cloud outage. Stamped by the CLI and by
+   * hosted runs; absent on pre-#747 reports, which keep the legacy messaging.
+   * Kept as is for older readers: `auditLevel` carries the full picture.
+   * REPORT-ONLY.
    */
   coverageMode?: CoverageMode;
+  /**
+   * The audit level this run used, with the settings it resolved to: the level
+   * name (or `custom`), the level it started from, which settings were changed
+   * from it, and every setting's value. A snapshot, so a report still says what
+   * ran after the level's definition changes. Absent on reports written before
+   * audit levels. REPORT-ONLY.
+   */
+  auditLevel?: ResolvedAuditSettings;
   /**
    * Render-block recovery summary (#512/#490): pages whose browser/cloud render
    * was blocked (403/WAF) and were recovered via a non-browser fallback fetch.
@@ -1493,7 +1503,8 @@ export interface ParsedPage {
   hreflangAlternates?: HreflangAlternate[];
 }
 
-export type CoverageMode = "quick" | "surface" | "full";
+/** The crawler's name for an audit level: quick, surface or full (see audit-levels.ts). */
+export type CoverageMode = AuditLevel;
 
 // Per-website cloud-render override (#318): auto = engine decides, always =
 // force browser render, never = plain HTTP fetch.

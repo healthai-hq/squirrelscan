@@ -2,6 +2,7 @@ import { FEEDBACK_CATEGORIES } from "@squirrelscan/utils/constants";
 
 import type { Result } from "@/controllers/types";
 
+import { AUDIT_LEVELS } from "@/cli/audit-level";
 import { ENTITY_FORMATS } from "@/cli/commands/entities";
 import { OUTPUT_FORMATS } from "@/constants";
 import { ok, err, commandError } from "@/controllers/types";
@@ -13,6 +14,7 @@ const entityFormatValues = ENTITY_FORMATS.join(" ");
 const entityProblemValues = ENTITY_PROBLEMS.join(" ");
 const formatValues = OUTPUT_FORMATS.join(" ");
 const feedbackCategoryValues = FEEDBACK_CATEGORIES.join(" ");
+const levelValues = AUDIT_LEVELS.join(" ");
 
 export type Shell = "bash" | "zsh" | "fish";
 
@@ -197,8 +199,8 @@ _squirrel_completions() {
       ;;
     audit)
       case "\${prev}" in
-        --coverage|-C)
-          COMPREPLY=( $(compgen -W "quick surface full" -- "\${cur}") )
+        --level|--coverage|-C)
+          COMPREPLY=( $(compgen -W "${levelValues}" -- "\${cur}") )
           return 0
           ;;
         --visibility)
@@ -218,7 +220,7 @@ _squirrel_completions() {
           return 0
           ;;
       esac
-      COMPREPLY=( $(compgen -W "--max-pages -m --max-depth --concurrency --per-host --coverage -C --format -f --output -o --refresh -r --fresh-ua --incremental --no-incremental --resume --verbose -v --debug --trace --project-name -n --publish -p --no-publish --visibility --yes -y --render --render-mode --http --offline --fail-on --header -H --rule-include --rule-exclude --disable-discovery-probes --probe -P --passive --aggressive --probe-budget --pentest --summary --help" -- "\${cur}") )
+      COMPREPLY=( $(compgen -W "--max-pages -m --max-depth --concurrency --per-host --level --coverage -C --format -f --output -o --refresh -r --fresh-ua --incremental --no-incremental --resume --verbose -v --debug --trace --project-name -n --publish -p --no-publish --visibility --yes -y --render --render-mode --http --offline --fail-on --header -H --rule-include --rule-exclude --disable-discovery-probes --probe -P --passive --aggressive --probe-budget --pentest --summary --help" -- "\${cur}") )
       return 0
       ;;
     entities)
@@ -227,12 +229,12 @@ _squirrel_completions() {
       ;;
     crawl)
       case "\${prev}" in
-        --coverage|-C)
-          COMPREPLY=( $(compgen -W "quick surface full" -- "\${cur}") )
+        --level|--coverage|-C)
+          COMPREPLY=( $(compgen -W "${levelValues}" -- "\${cur}") )
           return 0
           ;;
       esac
-      COMPREPLY=( $(compgen -W "--max-pages -m --concurrency --per-host --coverage -C --refresh -r --fresh-ua --resume --help" -- "\${cur}") )
+      COMPREPLY=( $(compgen -W "--max-pages -m --concurrency --per-host --level --coverage -C --refresh -r --fresh-ua --resume --help" -- "\${cur}") )
       return 0
       ;;
     credits)
@@ -520,7 +522,8 @@ _squirrel() {
             '--max-depth[Maximum crawl depth from the seed]:number' \\
             '--concurrency[Global crawl worker pool size]:number' \\
             '--per-host[Max concurrent requests per host]:number' \\
-            '(-C --coverage)'{-C,--coverage}'[Coverage mode]:mode:(quick surface full)' \\
+            '(-C --coverage --level)--level[Audit level]:level:(${levelValues})' \\
+            '(-C --coverage --level)'{-C,--coverage}'[Audit level (old name for --level)]:level:(${levelValues})' \\
             '(-f --format)'{-f,--format}'[Output format]:format:(${formatValues})' \\
             '(-o --output)'{-o,--output}'[Output file path]:file:_files' \\
             '(-r --refresh)'{-r,--refresh}'[Ignore cache, fetch all pages fresh]' \\
@@ -549,7 +552,7 @@ _squirrel() {
             '--passive[Probing intensity passive: no requests beyond the crawl]' \\
             '--aggressive[Probing intensity aggressive: loud probes, can trip a WAF]' \\
             '--probe-budget[Wall-clock cap for all probing (e.g. 30s)]:duration' \\
-            '--pentest[Shorthand for --coverage full --probe aggressive]' \\
+            '--pentest[Shorthand for --level full --probe aggressive]' \\
             '--summary[Print score, category breakdown, and issue counts only]'
           ;;
         entities)
@@ -571,7 +574,8 @@ _squirrel() {
             '(-m --max-pages)'{-m,--max-pages}'[Maximum pages to crawl]:number' \\
             '--concurrency[Global crawl worker pool size]:number' \\
             '--per-host[Max concurrent requests per host]:number' \\
-            '(-C --coverage)'{-C,--coverage}'[Coverage mode]:mode:(quick surface full)' \\
+            '(-C --coverage --level)--level[Audit level]:level:(${levelValues})' \\
+            '(-C --coverage --level)'{-C,--coverage}'[Audit level (old name for --level)]:level:(${levelValues})' \\
             '(-r --refresh)'{-r,--refresh}'[Ignore cache, fetch all pages fresh]' \\
             '--fresh-ua[Re-roll the pinned random user-agent]' \\
             '--resume[Resume interrupted crawl]'
@@ -768,7 +772,8 @@ complete -c squirrel -n "__fish_seen_subcommand_from audit" -s m -l max-pages -d
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l max-depth -d "Maximum crawl depth from the seed"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l concurrency -d "Global crawl worker pool size"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l per-host -d "Max concurrent requests per host"
-complete -c squirrel -n "__fish_seen_subcommand_from audit" -s C -l coverage -a "quick surface full" -d "Coverage mode"
+complete -c squirrel -n "__fish_seen_subcommand_from audit" -l level -a "${levelValues}" -d "Audit level"
+complete -c squirrel -n "__fish_seen_subcommand_from audit" -s C -l coverage -a "${levelValues}" -d "Audit level (old name for --level)"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -s f -l format -a "${formatValues}" -d "Output format"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -s o -l output -d "Output file path"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -s r -l refresh -d "Ignore cache, fetch all pages fresh"
@@ -797,7 +802,7 @@ complete -c squirrel -n "__fish_seen_subcommand_from audit" -s P -l probe -a "pa
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l passive -d "Probing intensity passive: no requests beyond the crawl"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l aggressive -d "Probing intensity aggressive: loud probes, can trip a WAF"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l probe-budget -d "Wall-clock cap for all probing (e.g. 30s)"
-complete -c squirrel -n "__fish_seen_subcommand_from audit" -l pentest -d "Shorthand for --coverage full --probe aggressive"
+complete -c squirrel -n "__fish_seen_subcommand_from audit" -l pentest -d "Shorthand for --level full --probe aggressive"
 complete -c squirrel -n "__fish_seen_subcommand_from audit" -l summary -d "Print score, category breakdown, and issue counts only"
 
 # Entities options
@@ -819,7 +824,8 @@ complete -c squirrel -n "__fish_seen_subcommand_from credits" -l upgrade -d "Ope
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -s m -l max-pages -d "Maximum pages to crawl"
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -l concurrency -d "Global crawl worker pool size"
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -l per-host -d "Max concurrent requests per host"
-complete -c squirrel -n "__fish_seen_subcommand_from crawl" -s C -l coverage -a "quick surface full" -d "Coverage mode"
+complete -c squirrel -n "__fish_seen_subcommand_from crawl" -l level -a "${levelValues}" -d "Audit level"
+complete -c squirrel -n "__fish_seen_subcommand_from crawl" -s C -l coverage -a "${levelValues}" -d "Audit level (old name for --level)"
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -s r -l refresh -d "Ignore cache, fetch all pages fresh"
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -l fresh-ua -d "Re-roll the pinned random user-agent"
 complete -c squirrel -n "__fish_seen_subcommand_from crawl" -l resume -d "Resume interrupted crawl"

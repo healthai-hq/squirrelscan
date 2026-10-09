@@ -112,6 +112,16 @@ export const AUDIT_LEVEL_COPY: Readonly<
   },
 };
 
+/** Words for each setting, for any surface that lists or names one. */
+export const AUDIT_SETTING_COPY: Readonly<Record<AuditSettingKey, { label: string }>> = {
+  pages: { label: "Pages" },
+  crawlStrategy: { label: "Crawl strategy" },
+  cloudChecks: { label: "Cloud checks" },
+  render: { label: "Rendering" },
+  externalLinks: { label: "External link checks" },
+  probe: { label: "Probing" },
+};
+
 export const DEFAULT_AUDIT_LEVEL: AuditLevel = "surface";
 
 export interface ResolvedAuditSettings {
@@ -143,6 +153,23 @@ export function resolveAuditSettings(
     settings: merged,
     changes,
   };
+}
+
+/**
+ * The crawler mode that implements a crawl strategy. The crawler and its
+ * stored records still speak the older coverage-mode words (quick, surface,
+ * full), one per strategy, so a custom audit's strategy maps to the mode that
+ * crawls that way, whichever level it started from.
+ */
+export function crawlStrategyCoverageMode(strategy: CrawlStrategy): AuditLevel {
+  switch (strategy) {
+    case "seed-and-sitemap":
+      return "quick";
+    case "sampled":
+      return "surface";
+    case "all":
+      return "full";
+  }
 }
 
 /** Which level a full set of settings is: a preset's name when it matches one exactly, else `custom`. */

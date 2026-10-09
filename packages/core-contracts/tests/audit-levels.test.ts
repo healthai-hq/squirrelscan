@@ -7,7 +7,10 @@ import {
   AUDIT_LEVEL_PRESETS,
   AUDIT_LEVELS,
   AUDIT_MAX_PAGES,
+  AUDIT_SETTING_COPY,
+  AUDIT_SETTING_KEYS,
   clampAuditPages,
+  crawlStrategyCoverageMode,
   effectiveAuditSettings,
   legacyCloudDepthSettings,
   levelOfSettings,
@@ -110,6 +113,26 @@ describe("custom", () => {
     expect(clampAuditPages(Number.NaN)).toBe(100);
     expect(clampAuditPages(Number.POSITIVE_INFINITY)).toBe(100);
     expect(resolveAuditSettings("full", { pages: 99_999 }).settings.pages).toBe(10_000);
+  });
+});
+
+describe("setting words", () => {
+  test("every setting has a label", () => {
+    expect(Object.keys(AUDIT_SETTING_COPY).sort()).toEqual([...AUDIT_SETTING_KEYS].sort());
+    for (const key of AUDIT_SETTING_KEYS) expect(AUDIT_SETTING_COPY[key].label.length).toBeGreaterThan(0);
+  });
+});
+
+describe("crawl strategy", () => {
+  test("each level's strategy maps back to the crawler mode of the same name", () => {
+    for (const level of AUDIT_LEVELS) {
+      expect(crawlStrategyCoverageMode(AUDIT_LEVEL_PRESETS[level].crawlStrategy)).toBe(level);
+    }
+  });
+
+  test("a custom audit crawls by its strategy, not by the level it started from", () => {
+    const custom = resolveAuditSettings("quick", { crawlStrategy: "all" });
+    expect(crawlStrategyCoverageMode(custom.settings.crawlStrategy)).toBe("full");
   });
 });
 
